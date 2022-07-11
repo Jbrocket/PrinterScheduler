@@ -333,7 +333,7 @@ int drain_queue(){
 	node_t *temp = job_queue->head;
 	while(temp != NULL){
 		pthread_mutex_lock(&lock);
-		if (temp->status != DONE) return 0;
+		if (temp->status != DONE) {pthread_mutex_unlock(&lock); return 0;}
 		temp = temp->next;
 		pthread_mutex_unlock(&lock);
 	}
