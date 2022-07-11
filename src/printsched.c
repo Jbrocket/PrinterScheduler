@@ -72,6 +72,7 @@ int main(int argc, char *argv[]){
 	unsigned int buffer_length = 256;
 	char buffer[buffer_length];
 	char *splits[buffer_length];
+    fprintf(stdout, "type \"help\" to begin\n");
 	while(fgets(buffer, buffer_length, stdin) != NULL && !is_quit){
 		int num_args = 1;
 		char *temp = strtok(buffer, " \t\n");
@@ -170,17 +171,16 @@ int main(int argc, char *argv[]){
 			}
 		}
 		else if(!strcmp(splits[0], "quit")){
-			
 			is_quit = 1;
 		 
 			delete_dll(job_queue);
-			exit(-1);
+			exit(0);
 		}
 		else if(!strcmp(splits[0], "help")){
-			fprintf(stdout, "submit <file name>\nlist\nwait <job id>\ndrain\nremove <job id>\nhurry <job id>\nalgo <fifo|sjf|balanced>\nquit\nhelp\n");
+			fprintf(stdout, "submit <file name>\nlist\nwait <job id>\ndrain\nremove <job id>\nhurry <job id>\nalgo <fifo|sjf|balanced>\nquit\n");
 		}
 		else{
-			fprintf(stdout, "Whoops!\n");
+			fprintf(stdout, "use \"help\" command\n");
 		}
 	}
 	for(i = 0; i < NUM_THREADS; i++){
@@ -221,15 +221,15 @@ void *printer_handler(){
 		curr_node->time_started = time(NULL);
 		curr_node->status = PRINTING;
 		char *exec_args[2];			
-		exec_args[0] = "./printersim";
+		exec_args[0] = "./exe/printersim";
 		exec_args[1] = curr_node->file_name;
 	
 		pthread_mutex_unlock(&lock);
 	
 		int pid = fork();
 		if(pid == 0){
-			if(execvp("./printersim", exec_args) < 0){
-				printf("OH GOD SOMETHING IS BAD %s\n", strerror(errno));
+			if(execvp("./exe/printersim", exec_args) < 0){
+				printf("error with execvp on line 231: %s\n", strerror(errno));
 				pthread_mutex_lock(&lock);
 				curr_node->status = FAILURE;
 				pthread_mutex_unlock(&lock);
@@ -237,7 +237,7 @@ void *printer_handler(){
 		}	
 		else{
 			if(waitpid(pid, NULL, 0) < 0){
-				printf("OHIOASHDFIASJF %s\n", strerror(errno));
+				printf("error with waitpid on line 240: %s\n", strerror(errno));
 				exit(-1);
 			}
 			else{
@@ -311,7 +311,7 @@ int queue_wait(int job_id){
 	while(1){
 		pthread_mutex_lock(&lock);
 		if(temp->status == DONE || temp->status == FAILURE) break;
-		pthread_mutex_unlock(&lock); // GROSS!
+		pthread_mutex_unlock(&lock); // necessary
 	}
 	if(temp->status == FAILURE){
 		fprintf(stdout,"FAILURE | Arrival Time: %d | Start Time: %d | Exit Time: %d\n", temp->time_arrived, temp->time_started, temp->time_completed);
