@@ -1,0 +1,6 @@
+list
+wait 1
+list
+wait 2
+submit dpepafjaidf
+quit
