@@ -1,4 +1,7 @@
-all: printersim printsched printersim.dSYM
+all: mk printersim printsched printersim.dSYM
+
+mk:
+	mkdir exe obj
 
 printersim: src/printersim.c
 	gcc src/printersim.c inc/gfx.c -o exe/printersim -Wall -g -pthread -lX11 -lm
@@ -13,6 +16,5 @@ printersim.dSYM:
 	rm -rf exe/printersim.dSYM
 
 clean:
-	rm -f exe/printersim
-	rm -f exe/printsched 
-	rm -f obj/dll.o
+	rm -rf exe
+	rm -rf obj
