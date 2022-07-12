@@ -22,6 +22,7 @@ int algorithm = 0;
 void *printer_handler();
 void print_jobs();
 void remove_node(int job_id);
+void hurry(int job_id);
 int queue_wait(int job_id);
 int drain_queue();
 node_t *smallest_job();
@@ -141,7 +142,8 @@ int main(int argc, char *argv[]){
 				fprintf(stdout, "Usage: hurry <job id>\n");
 			}
 			else{
-				fprintf(stdout, "%s\n", splits[1]);
+				// fprintf(stdout, "%s\n", splits[1]);
+				hurry(atoi(splits[1]));
 			}
 		}
 		else if(!strcmp(splits[0], "remove")){
@@ -149,7 +151,7 @@ int main(int argc, char *argv[]){
 				fprintf(stdout, "Usage: remove <job id>\n");
 			}
 			else{
-				fprintf(stdout, "%s\n", splits[1]);
+				// fprintf(stdout, "%s\n", splits[1]);
 				remove_node(atoi(splits[1]));
 			}
 		}
@@ -194,9 +196,6 @@ int main(int argc, char *argv[]){
 
 
 
-
-
-
 void *printer_handler(){
 	while(1){	
 		pthread_mutex_lock(&lock);
@@ -206,19 +205,33 @@ void *printer_handler(){
 				return NULL;
 			}
 		}
-		node_t *curr_node;
-		if(algorithm == 0){
-			curr_node = job_queue->head;
-			while(curr_node != NULL && curr_node->status != WAITING){
-				curr_node = curr_node->next;
-			}
-		}	
-		else if(algorithm == 1){
-			curr_node = smallest_job(); 
+		node_t *prio_node = job_queue->head;
+		while(1){
+			if (prio_node == NULL) break;
+			if (prio_node->priority == 1) break;
+			prio_node = prio_node->next;
 		}
-		else{
-			curr_node = smallest_job_with_wait_prio();
-		}		
+
+		node_t *curr_node = job_queue->head;
+		if (prio_node == NULL){
+			if(algorithm == 0){
+				while(curr_node != NULL && curr_node->status != WAITING){
+					curr_node = curr_node->next;
+				}
+			}	
+			else if(algorithm == 1){
+				curr_node = smallest_job(); 
+			}
+			else{
+				curr_node = job_queue->head;
+				curr_node = smallest_job_with_wait_prio();
+			}
+		}
+		else {
+			prio_node->priority = 0;
+			curr_node = prio_node;
+		}
+		
 		num_jobs--;
 		curr_node->time_started = time(NULL);
 		curr_node->status = PRINTING;
@@ -455,3 +468,23 @@ void remove_node(int job_id_num){
 	return;
 }
 
+void hurry(int job_id_num){
+	if (job_queue->head == NULL){
+		return;
+	}
+
+	node_t *temp = job_queue->head;
+	while( temp != NULL && temp->job_id != job_id_num){
+		temp = temp->next;
+	}
+	if (temp == NULL){
+		printf("Enter a valid job id for hurry <job_id>");
+		return;
+	}
+	if (temp->status != WAITING){
+		printf("Can't assign priority to a printer that is already done or active\n");
+		return;
+	}
+	temp->priority = 1;
+	return;
+}
