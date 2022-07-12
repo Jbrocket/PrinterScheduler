@@ -21,6 +21,7 @@ int algorithm = 0;
 
 void *printer_handler();
 void print_jobs();
+void remove_node(int job_id);
 int queue_wait(int job_id);
 int drain_queue();
 node_t *smallest_job();
@@ -383,4 +384,73 @@ node_t *smallest_job_with_wait_prio(){
 	return res;
 }
 
+void remove_node(int job_id_num){
+	if (job_queue->head == NULL){
+		return;
+	}
+
+	pthread_mutex_lock(&lock);
+	node_t *temp = job_queue->head;
+	while( temp != NULL && temp->job_id != job_id_num){
+		temp = temp->next;
+	}
+	if (temp == NULL){
+		printf("Can't remove printer that doesn't exist!\n");
+		pthread_mutex_unlock(&lock);
+		return;
+	}
+
+	if (temp->status == PRINTING){
+		printf("Can't remove printer that is printing!\n");
+		pthread_mutex_unlock(&lock);
+		return;
+	}
+
+	if (temp == job_queue->tail && temp == job_queue->head){
+		job_queue->head = NULL;
+		job_queue->tail = NULL;
+
+		if (temp->status == WAITING) num_jobs--;
+
+		free(temp);
+
+		pthread_mutex_unlock(&lock);
+		return;
+	}
+
+	if (temp == job_queue->head){
+		job_queue->head = job_queue->head->next;
+		job_queue->head->prev = NULL;
+
+		if (temp->status == WAITING) num_jobs--;
+
+		free(temp);
+
+		pthread_mutex_unlock(&lock);
+		return;
+	}
+
+	if (temp == job_queue->tail){
+		job_queue->tail = job_queue->tail->prev;
+		job_queue->tail->next = NULL;
+
+		if (temp->status == WAITING) num_jobs--;
+
+		free(temp);
+
+		pthread_mutex_unlock(&lock);
+		return;
+	}
+
+	node_t *temp1 = temp->prev;
+	node_t *temp2 = temp->next;
+	temp1->next = temp2;
+	temp2->prev = temp1;
+	
+	if (temp->status == WAITING) num_jobs--;
+
+	free(temp);
+	pthread_mutex_unlock(&lock);
+	return;
+}
 
