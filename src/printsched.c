@@ -150,6 +150,7 @@ int main(int argc, char *argv[]){
 			}
 			else{
 				fprintf(stdout, "%s\n", splits[1]);
+				remove_node(atoi(splits[1]));
 			}
 		}
 		else if(!strcmp(splits[0], "algo")){
