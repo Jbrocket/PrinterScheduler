@@ -339,21 +339,24 @@ int queue_wait(int job_id){
 }
 
 
-
 int drain_queue(){
-	if (job_queue->head == NULL){
-		printf("No current jobs\n");
-		return 1;
-	}
-	node_t *temp = job_queue->head;
-	while(temp != NULL){
-		pthread_mutex_lock(&lock);
-		if (temp->status != DONE) {pthread_mutex_unlock(&lock); return 0;}
-		temp = temp->next;
-		pthread_mutex_unlock(&lock);
-	}
-	return 1;
+        if (job_queue->head == NULL){
+                printf("No current jobs\n");
+                return 1;
+        }
+        node_t *temp = job_queue->head;
+        int i;
+        for(i = 0; i < job_queue->length; i++){
+                pthread_mutex_lock(&lock);
+                while(temp->status != DONE){
+                        pthread_cond_wait(&cond, &lock);
+                }
+                temp = temp->next;
+                pthread_mutex_unlock(&lock);
+        }
+        return 1;
 }
+
 
 
 
